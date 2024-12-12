@@ -1,4 +1,5 @@
-from django.db import models
+from django.db import IntegrityError, models
+from django.contrib.auth.models import User
 
 class Cliente(models.Model):
     cedula = models.CharField(max_length=15, unique=True)
@@ -21,28 +22,82 @@ class Producto(models.Model):
         return self.nombre
 
 class Factura(models.Model):
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
-    usuario_creacion = models.CharField(max_length=100)  # Nombre del usuario que crea la factura
+    cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE)
+    descuento = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-    numero_factura = models.CharField(max_length=20, unique=True)
-    descuento = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    total = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    numero_factura = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    total_abonos = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Este campo es el que utilizamos para acumular los abonos
 
-    def __str__(self):
-        return self.numero_factura
+    @property
+    def total(self):
+        # Calcula el total sumando los precios de los detalles de la factura
+        total_items = sum(item.valor_total for item in self.detalles.all())
+        total_con_descuento = total_items - self.descuento if self.descuento else total_items
+        return total_con_descuento
 
-class Abono(models.Model):
-    factura = models.ForeignKey(Factura, on_delete=models.CASCADE)
-    monto_abono = models.DecimalField(max_digits=10, decimal_places=2)
+    @property
+    def saldo_pendiente(self):
+        # Calcula el saldo pendiente de la factura (total - total de abonos)
+        return self.total - self.total_abonos
+
+    def save(self, *args, **kwargs):
+        if not self.numero_factura:
+            self.numero_factura = self.generar_numero_factura()
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                super(Factura, self).save(*args, **kwargs)
+                break
+            except IntegrityError:
+                if attempt < max_retries - 1:
+                    self.numero_factura = self.generar_numero_factura()
+                else:
+                    raise
+
+    def generar_numero_factura(self):
+        ultimo_registro = Factura.objects.all().order_by('id').last()
+        if not ultimo_registro or not ultimo_registro.numero_factura:
+            nuevo_numero = 1
+        else:
+            nuevo_numero = int(ultimo_registro.numero_factura.split('-')[-1]) + 1
+        return f"FAC-{nuevo_numero:05d}"
+
+    
+class DetalleFactura(models.Model):
+    factura = models.ForeignKey('Factura', related_name='detalles', on_delete=models.CASCADE)
+    producto = models.ForeignKey('Producto', on_delete=models.CASCADE)
+    cantidad_solicitada = models.PositiveIntegerField()
+    valor_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    valor_total = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        # Descontar del inventario
+        self.producto.cantidad -= self.cantidad_solicitada
+        self.producto.save()
+        # Calcular el valor total
+        self.valor_total = self.cantidad_solicitada * self.valor_unitario
+        super().save(*args, **kwargs)
+        
+class Abono(models.Model): 
+    factura = models.ForeignKey(Factura, related_name='abonos', on_delete=models.CASCADE)
     fecha_abono = models.DateTimeField(auto_now_add=True)
-    metodo_pago = models.CharField(max_length=50)  # Contado, cheque, transferencia, etc.
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    forma_pago = models.CharField(
+        max_length=50, 
+        choices=[
+            ('contado', 'Contado'),
+            ('credito', 'Crédito'),
+            ('cheque', 'Cheque'),
+            ('consignacion', 'Consignación'),
+            ('transferencia', 'Transferencia'),
+            ('efectivo', 'Efectivo'),
+        ],
+        default='efectivo'  # Valor predeterminado
+    )
+    saldo_pendiente = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
-    def __str__(self):
-        return f'Abono de {self.monto_abono} a {self.factura.numero_factura}'
-
-class ReciboDeCaja(models.Model):
-    abono = models.OneToOneField(Abono, on_delete=models.CASCADE)
-    recibo_numero = models.CharField(max_length=20, unique=True)
-    fecha_emision = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f'Recibo {self.recibo_numero} para factura {self.abono.factura.numero_factura}'
+    def save(self, *args, **kwargs):
+        # Actualizar el saldo pendiente
+        self.saldo_pendiente = self.factura.total - sum(abono.monto for abono in self.factura.abonos.all()) - self.monto
+        super().save(*args, **kwargs)

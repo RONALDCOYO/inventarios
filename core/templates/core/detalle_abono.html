@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle Abono</title>
+</head>
+<body>
+    <h1>Detalle del Abono #{{ abono.id }}</h1>
+    <p><strong>Factura:</strong> {{ abono.factura.id }} + {{ abono.factura.numero_factura }}</p>
+    <p><strong>Monto:</strong> {{ abono.monto }}</p>
+    <p><strong>Fecha:</strong> {{ abono.fecha }}</p>
+    <a href="{% url 'editar_abono' abono.id %}">Editar</a>
+    <a href="{% url 'eliminar_abono' abono.id %}">Eliminar</a>
+    <a href="{% url 'lista_abonos' %}">Volver a la lista de abonos</a>
+</body>
+</html>

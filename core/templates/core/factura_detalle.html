@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Factura</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Detalle de Factura</h2>
+        <p><strong>Cliente:</strong> {{ factura.cliente.nombre }}</p>
+        <p><strong>Fecha:</strong> {{ factura.fecha_creacion }}</p>
+        <p><strong>Total:</strong> {{ factura.total }}</p>
+        <p><strong>Descuento:</strong> {{ factura.descuento }}</p>
+        <h3>Detalles</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Valor Unitario</th>
+                    <th>Valor Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in factura.detalles.all %}
+                    <tr>
+                        <td>{{ detalle.producto.nombre }}</td>
+                        <td>{{ detalle.cantidad_solicitada }}</td>
+                        <td>{{ detalle.valor_unitario }}</td>
+                        <td>{{ detalle.valor_total }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <h3>Abonos</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                    <th>Forma de Pago</th>
+                    <th>Saldo Pendiente</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for abono in factura.abonos.all %}
+                    <tr>
+                        <td>{{ abono.fecha_abono }}</td>
+                        <td>{{ abono.monto }}</td>
+                        <td>{{ abono.forma_pago }}</td>
+                        <td>{{ abono.saldo_pendiente }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a href="{% url 'crear_abono' %}?factura_id={{ factura.id }}" class="btn btn-primary">Agregar Abono</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realizar Abono</title>
+</head>
+<body>
+    <h1>Realizar Abono para la Factura #{{ factura.id }}</h1>
+
+    <p><strong>Total de la factura:</strong> {{ factura.total }}</p>
+    <p><strong>Total de abonos realizados:</strong> {{ factura.total_abonos }}</p>
+    <p><strong>Saldo pendiente:</strong> {{ factura.saldo_pendiente }}</p>
+
+    {% if error_message %}
+        <p style="color: red;">{{ error_message }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <label for="monto_abono">Monto del abono:</label>
+        <input type="number" name="monto_abono" step="0.01" required>
+        <button type="submit">Realizar Abono</button>
+    </form>
+
+    <br>
+    <a href="{% url 'factura_list' %}">Volver a la lista de facturas</a>
+</body>
+</html>

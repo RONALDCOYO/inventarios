@@ -1,5 +1,6 @@
 from django import forms
-from .models import Cliente, Producto
+from django.forms import inlineformset_factory
+from .models import Cliente, Producto, Factura, DetalleFactura, Abono  
 
 class ClienteForm(forms.ModelForm):
     class Meta:
@@ -24,3 +25,22 @@ class ProductoForm(forms.ModelForm):
             'ubicacion': forms.TextInput(attrs={'class': 'form-control'}),
             'valor_unitario': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+
+class FacturaForm(forms.ModelForm):
+    class Meta:
+        model = Factura
+        fields = ['cliente', 'descuento']
+
+DetalleFacturaFormSet = inlineformset_factory(
+    Factura, DetalleFactura, fields=['producto', 'cantidad_solicitada', 'valor_unitario'], extra=1, can_delete=True
+)
+
+class DetalleFacturaForm(forms.ModelForm):
+    class Meta:
+        model = DetalleFactura
+        fields = ['producto', 'cantidad_solicitada' , 'valor_unitario']
+
+class AbonoForm(forms.ModelForm):
+    class Meta:
+        model = Abono
+        fields = ['factura', 'monto', 'forma_pago']

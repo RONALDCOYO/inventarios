@@ -1,0 +1,47 @@
+{% load static %}  
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Abonos</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <h1>Lista de Abonos</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Fac_Num</th>
+                <th>Factura</th>
+                <th>Monto</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for abono in abonos %}
+            <tr>
+                <td>{{ abono.id }}</td>
+                <td>{{ abono.factura.numero_factura }}</td>
+                <td>{{ abono.factura.id }}</td>
+                <td>{{ abono.monto }}</td>
+                <td>{{ abono.fecha }}</td>
+                <td>
+                    <a href="{% url 'detalle_abono' abono.id %}">Ver Detalle</a>
+                    <a href="{% url 'editar_abono' abono.id %}">Editar</a>
+                    <a href="{% url 'eliminar_abono' abono.id %}">Eliminar</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No hay abonos registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'crear_abono' %}">Crear Nuevo Abono</a>
+</body>
+</html>
