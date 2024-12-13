@@ -10,6 +10,7 @@ urlpatterns = [
     path('crear_factura/', views.crear_factura, name='crear_factura'),
     path('crear_abono/', views.crear_abono, name='crear_abono'),
     path('factura/<int:factura_id>/', views.factura_detalle, name='factura_detalle'),
+    path('factura/<int:factura_id>/crear_abono/', views.crear_abono, name='crear_abono'),  # Ajustamos esta línea
     path('facturas/', views.factura_list, name='factura_list'),
     path('lista_abonos/', views.lista_abonos, name='lista_abonos'),
     path('detalle_abono/<int:abono_id>/', views.detalle_abono, name='detalle_abono'),

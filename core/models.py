@@ -25,21 +25,19 @@ class Factura(models.Model):
     cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE)
     descuento = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-    total = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     numero_factura = models.CharField(max_length=20, unique=True, blank=True, null=True)
-    total_abonos = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Este campo es el que utilizamos para acumular los abonos
+    total_abonos = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Campo para acumular los abonos
 
     @property
     def total(self):
-        # Calcula el total sumando los precios de los detalles de la factura
         total_items = sum(item.valor_total for item in self.detalles.all())
         total_con_descuento = total_items - self.descuento if self.descuento else total_items
         return total_con_descuento
 
     @property
     def saldo_pendiente(self):
-        # Calcula el saldo pendiente de la factura (total - total de abonos)
-        return self.total - self.total_abonos
+        total_abonos = self.abonos.aggregate(sum('monto'))['monto__sum'] or 0
+        return self.total - total_abonos
 
     def save(self, *args, **kwargs):
         if not self.numero_factura:
@@ -63,6 +61,10 @@ class Factura(models.Model):
             nuevo_numero = int(ultimo_registro.numero_factura.split('-')[-1]) + 1
         return f"FAC-{nuevo_numero:05d}"
 
+class Abono(models.Model):
+    factura = models.ForeignKey(Factura, related_name='abonos', on_delete=models.CASCADE)
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha = models.DateTimeField(auto_now_add=True)
     
 class DetalleFactura(models.Model):
     factura = models.ForeignKey('Factura', related_name='detalles', on_delete=models.CASCADE)

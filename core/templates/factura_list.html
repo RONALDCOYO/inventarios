@@ -1,38 +1,40 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Facturas</title>
 </head>
 <body>
     <h1>Lista de Facturas</h1>
-
     <table border="1">
-        <thead>
-            <tr>
-                <th>ID Factura</th>
-                <th>Total</th>
-                <th>Total Abonos</th>
-                <th>Saldo Pendiente</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for factura in facturas %}
-                <tr>
-                    <td>{{ factura.id }}</td>
-                    <td>{{ factura.total }}</td>
-                    <td>{{ factura.total_abonos }}</td>
-                    <td>{{ factura.saldo_pendiente }}</td>
-                    <td>
-                        <!-- Enlace para seleccionar la factura y realizar un abono -->
-                        <a href="{% url 'crear_abono' %}?factura_id={{ factura.id }}">Realizar Abono</a>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
+        <tr>
+            <th>Número de Factura</th>
+            <th>Total</th>
+            <th>Total Abonos</th>
+            <th>Saldo Pendiente</th>
+            <th>Fechas de Abonos</th>
+            <th>Acciones</th>
+        </tr>
+        {% for factura in facturas %}
+        <tr>
+            <td>{{ factura.numero_factura }}</td>
+            <td>{{ factura.total }}</td>
+            <td>{{ factura.total_abonos }}</td>
+            <td>{{ factura.saldo_pendiente_calculado }}</td>
+            <td>
+                <ul>
+                    {% for fecha in factura.abonos_fechas %}
+                    <li>{{ fecha }}</li>
+                    {% endfor %}
+                </ul>
+            </td>
+            <td>
+                <form action="{% url 'crear_abono' factura.id %}" method="get">
+                    <button type="submit">Generar Abono</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
     </table>
-
 </body>
 </html>

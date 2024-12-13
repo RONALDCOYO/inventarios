@@ -103,8 +103,7 @@ def crear_factura(request):
     return render(request, 'core/crear_factura.html', context)
 
 
-def crear_abono(request):
-    factura_id = request.GET.get('factura_id')
+def crear_abono(request, factura_id):
     factura = get_object_or_404(Factura, id=factura_id)
 
     if request.method == 'POST':
@@ -118,16 +117,16 @@ def crear_abono(request):
                 raise ValidationError("El monto del abono debe ser mayor que 0.")
 
             # Crear el abono
-            abono = Abono.objects.create(factura=factura, monto=monto_abono)
+            Abono.objects.create(factura=factura, monto=monto_abono)
 
             # Actualizar el total de abonos y saldo pendiente de la factura
             factura.total_abonos += monto_abono
             factura.save()  # Esto actualizará el saldo pendiente automáticamente con el nuevo total
 
             # Redirigir a la página de la factura después de guardar el abono
-            return redirect('factura_list')  # Cambia 'factura_list' por la URL correcta si es necesario
+            return redirect('factura_list')
 
-        except (ValueError, InvalidOperation) as e:
+        except (ValueError, Decimal.InvalidOperation):
             # Si el monto del abono no es un número válido
             error_message = "El monto ingresado no es válido."
             return render(request, 'core/crear_abono.html', {'factura': factura, 'error_message': error_message})
@@ -137,7 +136,6 @@ def crear_abono(request):
             return render(request, 'core/crear_abono.html', {'factura': factura, 'error_message': str(e)})
 
     return render(request, 'core/crear_abono.html', {'factura': factura})
-
 
 
 def detalle_abono(request, abono_id):
@@ -176,23 +174,16 @@ def factura_detalle(request, factura_id):
 
 
 def factura_list(request):
-    # Obtener todas las facturas
     facturas = Factura.objects.all()
 
-    # Calcular el total de abonos realizados a cada factura
     for factura in facturas:
-        # Obtener los abonos realizados a esta factura
         abonos = Abono.objects.filter(factura=factura)
-        
-        # Calcular el total de abonos realizados
         total_abonos = abonos.aggregate(Sum('monto'))['monto__sum'] or 0
-        
-        # Calcular el saldo pendiente de la factura
-        saldo_pendiente = factura.total - total_abonos  # Calcular el saldo pendiente directamente
-        
-        # Asignar el total de abonos calculado
+        saldo_pendiente = factura.total - total_abonos
+
+        # Agregamos los abonos y sus fechas a la factura
         factura.total_abonos = total_abonos
-        
-        # No necesitas asignar saldo_pendiente, ya que es una propiedad calculada automáticamente
+        factura.saldo_pendiente_calculado = saldo_pendiente
+        factura.abonos_fechas = abonos.values_list('fecha_abono', flat=True)
 
     return render(request, 'factura_list.html', {'facturas': facturas})

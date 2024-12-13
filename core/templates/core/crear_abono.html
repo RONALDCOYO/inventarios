@@ -6,11 +6,11 @@
     <title>Realizar Abono</title>
 </head>
 <body>
-    <h1>Realizar Abono para la Factura #{{ factura.id }}</h1>
+    <h1>Realizar Abono para la Factura #{{ factura.numero_factura }}</h1>
 
     <p><strong>Total de la factura:</strong> {{ factura.total }}</p>
     <p><strong>Total de abonos realizados:</strong> {{ factura.total_abonos }}</p>
-    <p><strong>Saldo pendiente:</strong> {{ factura.saldo_pendiente }}</p>
+    <p><strong>Saldo pendiente:</strong> {{ factura.saldo_pendiente_calculado }}</p>
 
     {% if error_message %}
         <p style="color: red;">{{ error_message }}</p>
