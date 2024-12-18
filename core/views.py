@@ -1,11 +1,15 @@
+
+from django.forms import modelformset_factory
+from .models import Factura, DetalleFactura, Producto
+from .forms import FacturaForm, DetalleFacturaFormSet
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.http import Http404
+from django.forms import ValidationError, inlineformset_factory
 from .forms import ClienteForm, ProductoForm, DetalleFacturaForm, FacturaForm, AbonoForm
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from .models import Abono, Cliente, Producto, Factura, DetalleFactura
-from django.forms import ValidationError, inlineformset_factory
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 
@@ -75,32 +79,25 @@ def listar_productos(request):
 
 @login_required
 def crear_factura(request):
-    productos = Producto.objects.all()  # Obtiene todos los productos
-    DetalleFacturaFormSet = inlineformset_factory(Factura, DetalleFactura, form=DetalleFacturaForm, extra=1)
-    
     if request.method == 'POST':
         factura_form = FacturaForm(request.POST)
-        detalle_formset = DetalleFacturaFormSet(request.POST, request.FILES)
-        
+        detalle_formset = DetalleFacturaFormSet(request.POST, prefix='detalle')
+
         if factura_form.is_valid() and detalle_formset.is_valid():
-            factura = factura_form.save(commit=False)
-            factura.usuario_creacion = request.user  # Asigna el usuario actual
-            factura.save()
-            detalles = detalle_formset.save(commit=False)
-            for detalle in detalles:
-                detalle.factura = factura
-                detalle.save()
-            return redirect('home')
+            factura = factura_form.save()
+            detalle_formset.instance = factura
+            detalle_formset.save()
+            return redirect('factura_list')  # Ajustar la URL según sea necesario
+
     else:
         factura_form = FacturaForm()
-        detalle_formset = DetalleFacturaFormSet()
+        detalle_formset = DetalleFacturaFormSet(prefix='detalle')
 
-    context = {
+    return render(request, 'core/crear_factura.html', {
         'factura_form': factura_form,
         'detalle_formset': detalle_formset,
-        'productos': productos,  # Pasa los productos al contexto
-    }
-    return render(request, 'core/crear_factura.html', context)
+        'productos': Producto.objects.all(),
+    })
 
 
 def crear_abono(request, factura_id):
@@ -168,7 +165,8 @@ def lista_abonos(request):
 
 
 def factura_detalle(request, factura_id):
-    factura = Factura.objects.get(id=factura_id)
+    factura = get_object_or_404(Factura, id=factura_id)
+    #factura = Factura.objects.get(id=factura_id)
     return render(request, 'core/factura_detalle.html', {'factura': factura})
 
 
