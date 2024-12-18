@@ -165,7 +165,7 @@ def lista_abonos(request):
 
 
 def factura_detalle(request, factura_id):
-    factura = get_object_or_404(Factura, id=factura_id)
+    factura = get_object_or_404(Factura, id=factura.id)
     #factura = Factura.objects.get(id=factura_id)
     return render(request, 'core/factura_detalle.html', {'factura': factura})
 

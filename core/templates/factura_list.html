@@ -29,7 +29,7 @@
                 </ul>
             </td>
             <td>
-                <form action="{% url 'crear_abono' factura.id %}" method="get">
+                <form action="{% url 'crear_abono' id=factura.id %}" method="get">
                     <button type="submit">Generar Abono</button>
                 </form>
                 <a href="{% url 'factura_detalle' factura.id %}"><button>Ver Detalles</button></a>
